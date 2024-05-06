@@ -45,7 +45,7 @@ const App = () => {
 
   console.log("page no is ", page)
   return (
-    <div className="w-screen h-screen bg-slate-300">
+    <div className="w-screen min-h-screen max-h-fit bg-slate-300">
       <section className="w-screen h-fit flex flex-col items-center justify-center">
         <div className="py-6">
           <h1 className="text-2xl font-bold">Magic Video Web App</h1>

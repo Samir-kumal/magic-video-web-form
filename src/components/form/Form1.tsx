@@ -18,14 +18,13 @@ import { useState } from "react";
 import { Progress } from "../ui/progress";
 import useDataProvider from "@/hooks/useDataProvider";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
+import { BASE_URL } from "@/context/DataContext";
 
 const formSchema = z.object({
   username: z.string().min(2, {
     message: "Username must be at least 2 characters.",
   }),
 });
-
-export const BASE_URL = "http://localhost:3000";
 
 const Form1 = () => {
   const { setPage } = useDataProvider();
@@ -53,12 +52,12 @@ const Form1 = () => {
     console.log(values);
     const formData = new FormData();
     formData.append("file", file as File);
-    formData.append("name", file?.name as string);
-    formData.append("username", values.username);
+    // formData.append("name", file?.name as string);
+    formData.append("name", values.username);
 
     try {
       const result = await axios.post(
-        `${BASE_URL}/api/upload`,
+        `${BASE_URL}/api/trainvideo_upload`,
         formData,
 
         {
@@ -95,27 +94,41 @@ const Form1 = () => {
     }
   };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFile(e.target.files[0]);
-      if (e.target.files[0].size > 10000000) {
-        setError({
+    const selectedFile = e.target.files ? e.target.files[0] : null;
+
+    if (!selectedFile) {
+      setError((previous) => {
+        return {
+          ...previous,
+          isError: true,
+          message: "No file selected",
+        };
+      });
+    } else if (selectedFile.size > 100000000) {
+      setError((previous) => {
+        return {
+          ...previous,
           isError: true,
           message: "File size is too large",
-        });
-        return;
-      }
-      if (e.target.files[0].type !== "video/mp4") {
-        setError({
+        };
+      });
+    } else if (selectedFile.type !== "video/mp4") {
+      setError((previous) => {
+        return {
+          ...previous,
           isError: true,
           message: "File type not supported",
-        });
-        return;
-      }
-    } else {
-      setError({
-        isError: true,
-        message: "No file selected",
+        };
       });
+    } else {
+      setError((previous) => {
+        return {
+          ...previous,
+          isError: false,
+          message: "",
+        };
+      });
+      setFile(selectedFile);
     }
   };
 
@@ -173,7 +186,7 @@ const Form1 = () => {
                   </FormControl>
                   {/* <FormMessage /> */}
                   {error.isError && (
-                    <FormMessage type="error">{error.message}</FormMessage>
+                    <FormMessage>{error.message}</FormMessage>
                   )}
                 </FormItem>
               )}

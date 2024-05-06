@@ -14,6 +14,8 @@ export enum PageAction {
 export interface DataProviderProps {
   children: React.ReactNode;
 }
+export const BASE_URL = "http://192.168.1.151:5000";
+
 
 const DataProvider = ({ children }: DataProviderProps) => {
   const [page, setPage] = useState(1);

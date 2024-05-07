@@ -1,29 +1,30 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+
 import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { useState } from "react";
 import { Progress } from "../ui/progress";
-import useDataProvider from "@/hooks/useDataProvider";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { BASE_URL } from "@/context/DataContext";
 import ReactPlayer from "react-player";
+import useDataProvider from "@/hooks/useDataProvider";
+import { Loader } from "lucide-react";
+import { LoadingSpinner } from "../ui/loadingSpinner";
+import "video-react/dist/video-react.css"; // import css
+import { Player, ControlBar } from "video-react";
+import io from "socket.io-client";
+
+const socket = io(BASE_URL);
 
 const Form2 = () => {
   const [file, setFile] = useState<File | null>(null);
+  const { setShouldGoNext } = useDataProvider();
+  // const url = `http://192.168.1.151:5000/api/files/download/Dhani_Bau_Ko_Chhori.mp4`;
+  // const url = `http://192.168.1.151:5000/api/files/download/output.mp4`;
+  const url = `http://192.168.1.151:5001/api/testupload_download`;
+  console.log("The url for the download link is ", url);
   const [videoUrl, setVideoUrl] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState({
     isError: false,
     message: "",
@@ -36,6 +37,24 @@ const Form2 = () => {
   const [uploadMsg, setUploadMsg] = useState("");
 
   // 1. Define your form.
+
+  socket.on("task", (data) => {
+    console.log("Task event received", data.data);
+    if (data.data === "Upload successful") {
+      setUploadMsg("File uploaded successfully");
+    }
+     else if (data.data === "Processing start") {
+      setUploadMsg("Processing the video");
+      setIsProcessing(true);
+    }
+     else if (data.data === "Processing complete") {
+      setUploadMsg("File processed Successfully");
+      setIsProcessing(false);
+    }
+    setUploadMsg("Video processing started...");
+  });
+
+  // Listen for socket event indicating video processing completed
 
   const handleFileUpload = async () => {
     const formData = new FormData();
@@ -60,7 +79,11 @@ const Form2 = () => {
                 ...previousState,
                 isStarted: true,
                 isFailed: false,
-                value: Math.round(progressEvent.progress * 100),
+                value: Math.round(
+                  progressEvent.progress === undefined
+                    ? 0
+                    : progressEvent.progress * 100
+                ),
               }));
             }
           },
@@ -70,8 +93,10 @@ const Form2 = () => {
         }
       );
       console.log(result);
-      setUploadMsg("File uploaded successfully");
-      // handleTestVideoDownload(result.data);
+
+      setVideoUrl(url);
+      // handleTestVideoDownload();
+      setShouldGoNext(true);
     } catch (error) {
       console.log(error);
       setUploadMsg("File upload failed");
@@ -82,54 +107,65 @@ const Form2 = () => {
     }
   };
 
-  // const handleTestVideoDownload = async (data: BlobPart) => {
+  // const handleTestVideoDownload = async () => {
+  //   const BASE_URI = `${BASE_URL}/api/testupload_download`; // Replace with your video URL
+  //   const downloadDirectory = "@/data/videos";
+  //   const VIDEO_ENDPOINT = "/api/testupload_download"; // Replace with your video endpoint
+  //   const filename = "downloaded_video.mp4"; // Specify the filename
+
   //   try {
-  //     const result = await axios.get(`${BASE_URL}/api/testvideo_download`, {
+  //     const response = await axios.get(`${BASE_URI}${VIDEO_ENDPOINT}`, {
   //       responseType: "blob",
   //     });
-  //     const blob = new Blob([data], { type: "video/mp4" });
-  //     console.log(blob);
-  //     const url = window.URL.createObjectURL(new Blob([data]));
-  //     console.log(url);
-  //     setVideoUrl(url);
+
+  //     const url = window.URL.createObjectURL(new Blob([response.data]));
+  //     const downloadPath = `${downloadDirectory}/${filename}`;
+
+  //     // Create a temporary anchor tag to trigger the download
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.setAttribute("download", downloadPath);
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
   //   } catch (error) {
   //     console.log(error);
   //   }
   // };
-  const handleTestVideoDownload = async (data: BlobPart) => {
-    try {
-      const result = await axios.get(
-        `${BASE_URL}/api/testupload_download`,
+  // const handleTestVideoDownload = async (data: BlobPart) => {
+  //   try {
+  //     const result = await axios.get(
+  //       `${BASE_URL}/api/testupload_download`,
 
-        {
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent && progressEvent.progress) {
-              setUploadMsg("downloading...");
-              console.log(
-                "Upload Progress: " +
-                  Math.round(progressEvent.progress * 100) +
-                  "%"
-              );
-              setProgress((previousState) => ({
-                ...previousState,
-                isStarted: true,
-                isFailed: false,
-                value: Math.round(progressEvent.progress * 100),
-              }));
-            }
-          },
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      console.log(result);
-      setUploadMsg("File downloaded successfully");
-      // handleTestVideoDownload(result.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  //       {
+  //         onUploadProgress: (progressEvent) => {
+  //           if (progressEvent && progressEvent.progress) {
+  //             setUploadMsg("downloading...");
+  //             console.log(
+  //               "Upload Progress: " +
+  //                 Math.round(progressEvent.progress * 100) +
+  //                 "%"
+  //             );
+  //             setProgress((previousState) => ({
+  //               ...previousState,
+  //               isStarted: true,
+  //               isFailed: false,
+  //               value: Math.round(progressEvent.progress * 100),
+  //             }));
+  //           }
+  //         },
+  //         headers: {
+  //           "Content-Type": "multipart/form-data",
+  //         },
+  //       }
+  //     );
+  //     console.log("The result from the Form 2", result);
+  //     setUploadMsg("File downloaded successfully");
+  //     // handleTestVideoDownload(result.data);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files ? e.target.files[0] : null;
 
@@ -166,11 +202,12 @@ const Form2 = () => {
         };
       });
       setFile(selectedFile);
+      // handleFileUpload();
     }
   };
 
   // 2. Define a submit handler.
-  function onSubmit(e) {
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!file) {
       setError({
@@ -189,7 +226,7 @@ const Form2 = () => {
   console.log("value of file", file);
   return (
     <>
-      {videoUrl.length ===0 ? 
+      {videoUrl.length === 0 ? (
         <>
           <CardHeader>
             <CardTitle>
@@ -197,7 +234,9 @@ const Form2 = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={onSubmit} className="space-y-8">
+            <form
+             onSubmit={onSubmit} 
+             className="space-y-8">
               <section>
                 <Input type="file" accept="video/*" onChange={handleChange} />
                 {/* <FormMessage /> */}
@@ -208,16 +247,23 @@ const Form2 = () => {
               </section>
               <section className="w-full flex items-center justify-between">
                 <section className="flex items-center justify-center gap-x-10">
-                  <Button type="submit">Upload</Button>
+                  {/* <LoadingSpinner className="" size="14" /> */}
+                  <Button disabled= {isProcessing || progress.isStarted} type="submit">Upload</Button>
                   {progress.isStarted && (
-                    <section>
-                      <Progress
-                        value={progress.value}
-                        className="w-40 h-[3px] "
-                        classNameCustom={
-                          progress.isFailed ? "bg-red-500" : `bg-green-500`
-                        }
-                      />
+                    <section className={`${isProcessing ? "flex" : ""}`}>
+                      {isProcessing ? (
+                        <div className=" w-fit px-1">
+                          <LoadingSpinner className="" size="14" />
+                        </div>
+                      ) : (
+                        <Progress
+                          value={progress.value}
+                          className="w-40 h-[3px] "
+                          classNameCustom={
+                            progress.isFailed ? "bg-red-500" : `bg-green-500`
+                          }
+                        />
+                      )}
                       <p className="text-[10px]">{uploadMsg}</p>
                     </section>
                   )}
@@ -225,8 +271,20 @@ const Form2 = () => {
               </section>
             </form>
           </CardContent>
-        </> : <ReactPlayer url={videoUrl} controls={true} />
-      }
+        </>
+      ) : (
+        <div className=" h-fit my-4 mx-4">
+          {/* <ReactPlayer
+            url={url}
+            controls={true}
+            height={"100%"}
+            width={"100%"}
+          /> */}
+          <Player autoPlay src={url}>
+            <ControlBar autoHide={false} className="my-class" />
+          </Player>
+        </div>
+      )}
     </>
   );
 };

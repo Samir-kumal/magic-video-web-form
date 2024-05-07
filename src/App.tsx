@@ -12,17 +12,13 @@ import { Button } from "./components/ui/button";
 import useDataProvider from "./hooks/useDataProvider";
 import { PageAction } from "./context/DataContext";
 import ProgressNumHeader from "./components/common/ProgressNumHeader";
-
-
+import "./App.css";
 
 const App = () => {
   const [progress, setProgress] = useState(25);
   const { updatePage, page } = useDataProvider();
 
-
-
   const handleNextPage = () => {
-    
     setProgress((oldProgress) => {
       if (oldProgress === 100) {
         return 25;
@@ -30,7 +26,6 @@ const App = () => {
       return oldProgress + 25;
     });
     updatePage(PageAction.NEXT);
-
   };
 
   const handlePreviousPage = () => {
@@ -41,16 +36,16 @@ const App = () => {
       return oldProgress - 25;
     });
     updatePage(PageAction.PREVIOUS);
-  }
+  };
 
-  console.log("page no is ", page)
+  console.log("page no is ", page);
   return (
     <div className="w-screen min-h-screen max-h-fit bg-slate-300">
       <section className="w-screen h-fit flex flex-col items-center justify-center">
         <div className="py-6">
           <h1 className="text-2xl font-bold">Magic Video Web App</h1>
         </div>
-       <ProgressNumHeader progress={progress} />
+        <ProgressNumHeader progress={progress} />
         <CardWrapper>
           {/* <CardHeader>
           
@@ -62,15 +57,19 @@ const App = () => {
             <CardTitle>Step 1 - Insert the name and a video of the subject you want to train</CardTitle>
           </CardHeader> */}
           {/* <CardContent> */}
-            <Form />
+          <Form />
           {/* </CardContent> */}
           <CardContent className="flex justify-end gap-x-3">
-           {page !==1 && <Button type="button" onClick={handlePreviousPage}>
-              Previous
-            </Button>}
-           {page !==4 && <Button type="button" onClick={handleNextPage}>
-              Next
-            </Button>}
+            {page !== 1 && (
+              <Button type="button" onClick={handlePreviousPage}>
+                Previous
+              </Button>
+            )}
+            {page !== 4 && (
+              <Button type="button" onClick={handleNextPage}>
+                Next
+              </Button>
+            )}
           </CardContent>
         </CardWrapper>
       </section>

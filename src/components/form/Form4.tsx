@@ -234,7 +234,7 @@ if(selectedSubjectId){
             <LoadingMessage
               isProcessing={isLoading}
               serverMsg={serverMsg}
-              videos={videos}
+              // videos={videos}
             />
           )}
         </Card>

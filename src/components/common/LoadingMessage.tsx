@@ -1,18 +1,14 @@
-import { VideoProps } from "@/context/DataContext";
+// import { VideoProps } from "@/context/DataContext";
 import { CardContent } from "../ui/card";
 import { LoadingSpinner } from "../ui/loadingSpinner";
 
 interface LoadingMessageProps {
   isProcessing: boolean;
   serverMsg: string;
-  videos: VideoProps[] | null;
+  // videos?: VideoProps[] | null;
 }
 
-const LoadingMessage = ({
-  isProcessing,
-  serverMsg,
-  videos,
-}: LoadingMessageProps) => {
+const LoadingMessage = ({ isProcessing, serverMsg }: LoadingMessageProps) => {
   const textColor =
     serverMsg === "Error loading videos" ? "text-red-500" : "text-black";
 

@@ -18,6 +18,7 @@ import { useState } from "react";
 import { Progress } from "../ui/progress";
 import useDataProvider from "@/hooks/useDataProvider";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
+import { BASE_URL } from "@/context/DataContext";
 
 const formSchema = z.object({
   username: z.string().min(2, {
@@ -25,10 +26,8 @@ const formSchema = z.object({
   }),
 });
 
-export const BASE_URL = "http://localhost:3000";
-
 const Form1 = () => {
-  const { setPage } = useDataProvider();
+  const { setShouldGoNext, setTestUser } = useDataProvider();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState({
     isError: false,
@@ -51,14 +50,15 @@ const Form1 = () => {
 
   const handleFileUpload = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
+    
     const formData = new FormData();
     formData.append("file", file as File);
-    formData.append("name", file?.name as string);
-    formData.append("username", values.username);
+    // formData.append("name", file?.name as string);
+    formData.append("name", values.username);
 
     try {
       const result = await axios.post(
-        `${BASE_URL}/api/upload`,
+        `${BASE_URL}/api/trainvideo_upload`,
         formData,
 
         {
@@ -74,7 +74,11 @@ const Form1 = () => {
                 ...previousState,
                 isStarted: true,
                 isFailed: false,
-                value: Math.round(progressEvent.progress * 100),
+                value: Math.round(
+                  progressEvent.progress === undefined
+                    ? 0
+                    : progressEvent.progress * 100
+                ),
               }));
             }
           },
@@ -85,6 +89,7 @@ const Form1 = () => {
       );
       console.log(result);
       setUploadMsg("File uploaded successfully");
+      setShouldGoNext(true);
     } catch (error) {
       console.log(error);
       setUploadMsg("File upload failed");
@@ -95,35 +100,44 @@ const Form1 = () => {
     }
   };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFile(e.target.files[0]);
-      if (e.target.files[0].size > 10000000) {
-        setError({
+    const selectedFile = e.target.files ? e.target.files[0] : null;
+    console.log(selectedFile);
+    if (!selectedFile) {
+      setError((previous) => {
+        return {
+          ...previous,
+          isError: true,
+          message: "No file selected",
+        };
+      });
+    } else if (selectedFile.size > 100000000) {
+      setError((previous) => {
+        return {
+          ...previous,
           isError: true,
           message: "File size is too large",
-        });
-        return;
-      }
-      if (e.target.files[0].type !== "video/mp4") {
-        setError({
+        };
+      });
+    } else if (selectedFile.type !== "video/mp4") {
+      setError((previous) => {
+        return {
+          ...previous,
           isError: true,
           message: "File type not supported",
-        });
-        return;
-      }
-    } else {
-      setError({
-        isError: true,
-        message: "No file selected",
+        };
       });
+    } else {
+      setError((previous) => {
+        return {
+          ...previous,
+          isError: false,
+          message: "",
+        };
+      });
+      setFile(selectedFile);
     }
   };
 
-  const handleNextPage = () => {
-    console.log("Next Page");
-
-    setPage(2);
-  };
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (!file) {
@@ -134,6 +148,7 @@ const Form1 = () => {
       return;
     }
     handleFileUpload(values);
+    setTestUser(values.username);
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values);
@@ -172,15 +187,13 @@ const Form1 = () => {
                     />
                   </FormControl>
                   {/* <FormMessage /> */}
-                  {error.isError && (
-                    <FormMessage type="error">{error.message}</FormMessage>
-                  )}
+                  {error.isError && <FormMessage>{error.message}</FormMessage>}
                 </FormItem>
               )}
             />
             <section className="w-full flex items-center justify-between">
               <section className="flex items-center justify-center gap-x-10">
-                <Button type="submit">Submit</Button>
+                <Button disabled = {!file} type="submit">Upload the video</Button>
                 {progress.isStarted && (
                   <section>
                     <Progress

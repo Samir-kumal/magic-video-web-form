@@ -1,4 +1,3 @@
-import React from 'react'
 
 interface ProgressNumHeaderProps {
     progress: number
@@ -9,7 +8,7 @@ const ProgressNumHeader = ({progress}: ProgressNumHeaderProps) => {
     <div>
       <h2
         className={`text-xl font-bold transition-all ${
-          progress === 25 ? "bg-black text-white" : "bg-white text-black"
+          progress === 20 ? "bg-black text-white" : "bg-white text-black"
         } p-4 rounded-full w-10 h-10 flex items-center justify-center`}
       >
         1
@@ -18,7 +17,7 @@ const ProgressNumHeader = ({progress}: ProgressNumHeaderProps) => {
     <div>
       <h2
         className={`text-xl font-bold transition-all ${
-          progress === 50 ? "bg-black text-white" : "bg-white text-black"
+          progress === 40 ? "bg-black text-white" : "bg-white text-black"
         } p-4 rounded-full w-10 h-10 flex items-center justify-center`}
       >
         2
@@ -28,7 +27,7 @@ const ProgressNumHeader = ({progress}: ProgressNumHeaderProps) => {
     <div>
       <h2
         className={`text-xl font-bold transition-all ${
-          progress === 75 ? "bg-black text-white" : "bg-white text-black"
+          progress === 60 ? "bg-black text-white" : "bg-white text-black"
         }  p-4 rounded-full w-10 h-10 flex items-center justify-center`}
       >
         3
@@ -37,10 +36,19 @@ const ProgressNumHeader = ({progress}: ProgressNumHeaderProps) => {
     <div>
       <h2
         className={`text-xl font-bold transition-all ${
-          progress === 100 ? "bg-black text-white" : "bg-white text-black"
+          progress === 80 ? "bg-black text-white" : "bg-white text-black"
         }  p-4 rounded-full w-10 h-10 flex items-center justify-center`}
       >
         4
+      </h2>
+    </div>
+    <div>
+      <h2
+        className={`text-xl font-bold transition-all ${
+          progress === 100 ? "bg-black text-white" : "bg-white text-black"
+        }  p-4 rounded-full w-10 h-10 flex items-center justify-center`}
+      >
+        5
       </h2>
     </div>
   </section>

@@ -5,11 +5,10 @@ import {  useForm } from "react-hook-form";
 import { Button } from "../ui/button";
 import axios, { AxiosError } from "axios";
 import { BASE_URL } from "@/context/DataContext";
-import { Progress } from "@/components/ui/progress";
 import useDataProvider from "@/hooks/useDataProvider";
 import io from "socket.io-client";
-import { LoadingSpinner } from "../ui/loadingSpinner";
 import { Player, ControlBar } from "video-react";
+import Modal from "../common/Modal";
 
 const socket = io(BASE_URL);
 
@@ -31,6 +30,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
   const [validDuration, setValidDuration] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const {
     register,
     handleSubmit,
@@ -48,85 +48,6 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
     state: false,
     url: "",
   });
-
-  socket.on("magic_video_task", (data) => {
-    console.log("Task event received", data.data);
-    if (data.data === "Magic Video Processing start") {
-      setIsProcessing(true);
-      setUploadMsg("Creating Magic Video..");
-    } else if (data.data === "Magic Video Done") {
-      setUploadMsg("Magic Video Created Successfully");
-      setIsProcessing(false);
-    }
-    setUploadMsg("Video processing started...");
-  });
-  const onSubmit = async (data: any) => {
-    data.marked_time = formattedTime;
-    const values = {
-      ...data,
-      testuser: "bean",
-      subject_id: selectedSubjectId,
-    };
-    console.log("new data", values);
-    setProgress((previousState) => ({
-      ...previousState,
-      isStarted: true,
-      isFailed: false,
-    }));
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/api/get_magic_video`,
-        values,
-
-        {
-          onDownloadProgress: (progressEvent) => {
-            if (progressEvent && progressEvent.progress) {
-              setUploadMsg("Creating Magic Video..");
-              console.log(
-                "Upload Progress: " +
-                  Math.round(progressEvent.progress * 100) +
-                  "%"
-              );
-            }
-          },
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.data.success) {
-        console.log(response.data.success);
-        setUploadMsg(response.data.success);
-        setIsCompleted(true);
-        setUrl((prev) => ({
-          ...prev,
-          state: true,
-          url: `${BASE_URL}/api/magic_video_download`,
-        }));
-        setProgress((previousState) => ({
-          ...previousState,
-          isCompleted: true,
-          //   isStarted: false,
-        }));
-      }
-    } catch (err) {
-      if (err instanceof AxiosError) {
-        console.log(err.response?.data);
-        setUploadMsg("File upload failed");
-        setProgress((previousState) => ({
-          ...previousState,
-          isFailed: true,
-        }));
-      } else {
-        console.log(err);
-        setUploadMsg("File upload failed");
-        setProgress((previousState) => ({
-          ...previousState,
-          isFailed: true,
-        }));
-      }
-    }
-  };
 
   const handlePause = () => {
     if (playerRef.current) {
@@ -192,7 +113,100 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
   };
 
   console.log("uploaded video", uploadedVideo?.name);
-  //   const videoBlob = new Blob([uploadedVideo], { type: uploadedVideo?.type });
+
+  const CreateMagicVideo = async (data: any) => {
+    data.marked_time = formattedTime;
+    const values = {
+      ...data,
+      testuser: "bean",
+      subject_id: selectedSubjectId,
+    };
+    console.log("new data", values);
+    setProgress((previousState) => ({
+      ...previousState,
+      isStarted: true,
+      isFailed: false,
+    }));
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/api/get_magic_video`,
+        values,
+
+        {
+          onDownloadProgress: (progressEvent) => {
+            if (progressEvent && progressEvent.progress) {
+              setUploadMsg("Creating Magic Video..");
+              console.log(
+                "Upload Progress: " +
+                  Math.round(progressEvent.progress * 100) +
+                  "%"
+              );
+            }
+          },
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.data.success) {
+        console.log(response.data.success);
+        setUploadMsg(response.data.success);
+        setIsCompleted(true);
+
+        setUrl((prev) => ({
+          ...prev,
+          state: true,
+          url: `${BASE_URL}/api/magic_video_download`,
+        }));
+        setProgress((previousState) => ({
+          ...previousState,
+          isCompleted: true,
+          //   isStarted: false,
+        }));
+      }
+    } catch (err) {
+      if (err instanceof AxiosError) {
+        console.log(err.response?.data);
+        setUploadMsg("File upload failed");
+        setProgress((previousState) => ({
+          ...previousState,
+          isFailed: true,
+        }));
+      } else {
+        console.log(err);
+        setUploadMsg("File upload failed");
+        setProgress((previousState) => ({
+          ...previousState,
+          isFailed: true,
+        }));
+      }
+    } finally {
+      setTimeout(() => {
+        setIsModalOpen(false);
+      }, 1000);
+    }
+  };
+
+  socket.on("magic_video_task", (data) => {
+    console.log("Task event received", data.data);
+    if (data.data === "Magic Video Processing start") {
+      setIsProcessing(true);
+      setUploadMsg("Creating Magic Video..");
+    } else if (data.data === "Magic Video Done") {
+      setUploadMsg("Magic Video Created Successfully");
+      setIsProcessing(false);
+    }
+  });
+
+  const onSubmit = async (data: any) => {
+    CreateMagicVideo(data);
+    setIsModalOpen(true);
+   
+
+  console.log("isModalOpen", isModalOpen);
+
+  }
+
 
   return (
     <>
@@ -203,18 +217,18 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
         {url.state ? (
           <CardContent className="w-full h-fit">
             <Player autoPlay src={url.url}>
-            <ControlBar autoHide={false} className="my-class" />
-          </Player>
-          <Button className="mt-4">
-                  <a href={url.url}>Download Video</a>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handlePreviousPageHandler}
-                  className="mt-4 float-end"
-                >
-                  Previous
-                </Button>
+              <ControlBar autoHide={false} className="my-class" />
+            </Player>
+            <Button className="mt-4">
+              <a href={url.url}>Download Video</a>
+            </Button>
+            <Button
+              type="button"
+              onClick={handlePreviousPageHandler}
+              className="mt-4 float-end"
+            >
+              Previous
+            </Button>
           </CardContent>
         ) : (
           <CardContent className="gap-2">
@@ -310,7 +324,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
                   Create Magic Video
                 </Button>
               </section>
-              <section className={`${isProcessing ? "flex" : ""}`}>
+              {/* <section className={`${isProcessing ? "flex" : ""}`}>
                 {isProcessing ? (
                   <div className=" w-fit px-1">
                     <LoadingSpinner className="" size="14" />
@@ -327,18 +341,21 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
                   />
                 )}
                 <p className="text-[12px]">{uploadMsg}</p>
-              </section>
-              {/* {url.state && (
-                <Button className="mt-1">
-                  <a href={url.url}>Download Video</a>
-                </Button>
-              )} */}
+              </section> */}
             </form>
           </CardContent>
         )}
       </Card>
+      {isModalOpen && (
+        <Modal
+          uploadMsg={uploadMsg}
+          isProcessing={isProcessing}
+          isCompleted={isCompleted}
+        />
+      )}
     </>
   );
 };
 
 export default Form5;
+

@@ -13,6 +13,7 @@ import { LoadingSpinner } from "../ui/loadingSpinner";
 import "video-react/dist/video-react.css"; // import css
 import { Player, ControlBar } from "video-react";
 import io from "socket.io-client";
+import Modal from "../common/Modal";
 
 const socket = io(BASE_URL);
 
@@ -35,6 +36,8 @@ const Form2 = () => {
     isFailed: false,
   });
   const [uploadMsg, setUploadMsg] = useState("");
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // 1. Define your form.
 
@@ -42,16 +45,15 @@ const Form2 = () => {
     console.log("Task event received", data.data);
     if (data.data === "Upload successful") {
       setUploadMsg("File uploaded successfully");
-    }
-     else if (data.data === "Processing start") {
+    } else if (data.data === "Processing start") {
       setUploadMsg("Processing the video");
       setIsProcessing(true);
-    }
-     else if (data.data === "Processing complete") {
+    } else if (data.data === "Processing complete") {
       setUploadMsg("File processed Successfully");
       setIsProcessing(false);
+      setIsCompleted(true);
     }
-    setUploadMsg("Video processing started...");
+    // setUploadMsg("Video processing started...");
   });
 
   // Listen for socket event indicating video processing completed
@@ -104,68 +106,15 @@ const Form2 = () => {
         ...previousState,
         isFailed: true,
       }));
+    } finally {
+      setTimeout(()=>{
+        setIsModalOpen(false);
+        setUploadMsg("");
+      },1000)
+      // setIsModalOpen(false);
     }
   };
 
-  // const handleTestVideoDownload = async () => {
-  //   const BASE_URI = `${BASE_URL}/api/testupload_download`; // Replace with your video URL
-  //   const downloadDirectory = "@/data/videos";
-  //   const VIDEO_ENDPOINT = "/api/testupload_download"; // Replace with your video endpoint
-  //   const filename = "downloaded_video.mp4"; // Specify the filename
-
-  //   try {
-  //     const response = await axios.get(`${BASE_URI}${VIDEO_ENDPOINT}`, {
-  //       responseType: "blob",
-  //     });
-
-  //     const url = window.URL.createObjectURL(new Blob([response.data]));
-  //     const downloadPath = `${downloadDirectory}/${filename}`;
-
-  //     // Create a temporary anchor tag to trigger the download
-  //     const link = document.createElement("a");
-  //     link.href = url;
-  //     link.setAttribute("download", downloadPath);
-  //     document.body.appendChild(link);
-  //     link.click();
-  //     document.body.removeChild(link);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-  // const handleTestVideoDownload = async (data: BlobPart) => {
-  //   try {
-  //     const result = await axios.get(
-  //       `${BASE_URL}/api/testupload_download`,
-
-  //       {
-  //         onUploadProgress: (progressEvent) => {
-  //           if (progressEvent && progressEvent.progress) {
-  //             setUploadMsg("downloading...");
-  //             console.log(
-  //               "Upload Progress: " +
-  //                 Math.round(progressEvent.progress * 100) +
-  //                 "%"
-  //             );
-  //             setProgress((previousState) => ({
-  //               ...previousState,
-  //               isStarted: true,
-  //               isFailed: false,
-  //               value: Math.round(progressEvent.progress * 100),
-  //             }));
-  //           }
-  //         },
-  //         headers: {
-  //           "Content-Type": "multipart/form-data",
-  //         },
-  //       }
-  //     );
-  //     console.log("The result from the Form 2", result);
-  //     setUploadMsg("File downloaded successfully");
-  //     // handleTestVideoDownload(result.data);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files ? e.target.files[0] : null;
 
@@ -202,7 +151,6 @@ const Form2 = () => {
         };
       });
       setFile(selectedFile);
-      // handleFileUpload();
     }
   };
 
@@ -216,10 +164,44 @@ const Form2 = () => {
       });
       return;
     }
+    setIsModalOpen(true);
     handleFileUpload();
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log("values", "file uploaded");
+    // setProgress((previousState) => ({
+    //   ...previousState,
+    //   isStarted: true,
+    //   value: 0,
+    // }));
+    // setIsModalOpen(true);
+    // setUploadMsg("File uploading...");
+    // setInterval(() => {
+    //   setProgress((previousState) => ({
+    //     ...previousState,
+    //     value: previousState.value + 25,
+    //   }));
+    // }, 1000);
+    // setTimeout(() => {
+    //   setUploadMsg("Processing the Video...");
+    //   setIsProcessing(true);
+    // }, 3000);
+    // setTimeout(() => {
+    //   setUploadMsg("Video Successfully Processed...");
+    //   setIsProcessing(false);
+    //   setIsCompleted(true);
+    //   setProgress((previousState) => ({
+    //     ...previousState,
+    //     value: 0,
+    //     isStarted: false,
+    //   }));
+    // }, 5000);
+    // setTimeout(() => {
+    //   setIsModalOpen(false);
+    //   setIsCompleted(false);
+     
+    //   setUploadMsg("");
+    // }, 10000);
   }
 
   console.log("value of progress", progress.value);
@@ -234,9 +216,7 @@ const Form2 = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form
-             onSubmit={onSubmit} 
-             className="space-y-8">
+            <form onSubmit={onSubmit} className="space-y-8">
               <section>
                 <Input type="file" accept="video/*" onChange={handleChange} />
                 {/* <FormMessage /> */}
@@ -248,8 +228,13 @@ const Form2 = () => {
               <section className="w-full flex items-center justify-between">
                 <section className="flex items-center justify-center gap-x-10">
                   {/* <LoadingSpinner className="" size="14" /> */}
-                  <Button disabled= {isProcessing || progress.isStarted || !file} type="submit">Upload</Button>
-                  {progress.isStarted && (
+                  <Button
+                    disabled={isProcessing || progress.isStarted || !file}
+                    type="submit"
+                  >
+                    Upload
+                  </Button>
+                  {/* {progress.isStarted && (
                     <section className={`${isProcessing ? "flex" : ""}`}>
                       {isProcessing ? (
                         <div className=" w-fit px-1">
@@ -266,7 +251,7 @@ const Form2 = () => {
                       )}
                       <p className="text-[10px]">{uploadMsg}</p>
                     </section>
-                  )}
+                  )} */}
                 </section>
               </section>
             </form>
@@ -284,6 +269,17 @@ const Form2 = () => {
             <ControlBar autoHide={false} className="my-class" />
           </Player>
         </div>
+      )}
+      {isModalOpen && (
+        <Modal
+          uploadMsg={uploadMsg}
+          isProcessing={isProcessing}
+          isCompleted={isCompleted}
+          formNumber={2}
+          progressValue={progress.value}
+          isStarted={progress.isStarted}
+          progress={progress}
+        />
       )}
     </>
   );

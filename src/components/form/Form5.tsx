@@ -31,6 +31,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -48,6 +49,21 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
     state: false,
     url: "",
   });
+
+  
+  useEffect(() => {
+    if (uploadedVideo) {
+      const objectUrl = URL.createObjectURL(
+        new Blob([uploadedVideo], { type: uploadedVideo?.type })
+      );
+      setVideoUrl(objectUrl);
+
+      // Clean up the object URL when component unmounts or when uploadedVideo changes
+      return () => {
+        URL.revokeObjectURL(objectUrl);
+      };
+    }
+  }, [uploadedVideo]);
 
   const handlePause = () => {
     if (playerRef.current) {
@@ -238,9 +254,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
                 url={
                   !uploadedVideo
                     ? selectedVideo?.download_url
-                    : URL.createObjectURL(
-                        new Blob([uploadedVideo], { type: uploadedVideo?.type })
-                      )
+                    :videoUrl ?? ""
                 }
                 width={"100%"}
                 height={"100%"}

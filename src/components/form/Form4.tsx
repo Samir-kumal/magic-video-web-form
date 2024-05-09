@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-// import data from "@/data/data.json";
+import  { useCallback, useEffect, useState } from "react";
 import ReactPlayer from "react-player";
-// import { Player, ControlBar } from "video-react";
 
 import {
   Card,
@@ -18,11 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import useDataProvider from "@/hooks/useDataProvider";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { BASE_URL, VideoProps } from "@/context/DataContext";
 import io from "socket.io-client";
 import LoadingMessage from "../common/LoadingMessage";
-
 
 const socket = io(BASE_URL);
 type HoveredVideo = {
@@ -31,10 +28,10 @@ type HoveredVideo = {
 };
 
 const Form4 = () => {
-  const { setSelectedSubjectId } = useDataProvider();
+  const { setSelectedSubjectId, selectedSubjectId } = useDataProvider();
   const [isLoading, setIsLoading] = useState(true);
   const [videos, setVideos] = useState<VideoProps[] | null>([]);
-  const { videosSubjects } = useDataProvider();
+  const { videosSubjects, setShouldGoNext } = useDataProvider();
   const { selectedVideo, setSelectedVideo, testUser } = useDataProvider();
   const [isProcessing, setIsProcessing] = useState(false);
   const [serverMsg, setServerMsg] = useState("loading videos");
@@ -46,14 +43,17 @@ const Form4 = () => {
     subject_id: "",
     subject_name: "",
   });
-  const [error, setError] = useState({
-    isError: false,
-    message: "",
-  });
 
-  useEffect(() => {
-    getVideoFiles();
-  }, []);
+
+  
+  useEffect(()=>{
+if(selectedSubjectId){
+  getVideoFiles(selectedSubjectId);
+} else {
+  getVideoFiles();
+
+}
+  },[])
 
   const getVideoFiles = useCallback(
     async (value = "") => {
@@ -63,25 +63,29 @@ const Form4 = () => {
       try {
         const result = await axios.post(`${BASE_URL}/api/files`, {
           subject_id: value,
-          testuser: "bean",
+          testuser: testUser,
         });
         if (result.data) {
           setIsLoading(false);
         }
         if (result.data.length > 0) {
           setVideos(result.data);
-        } 
-        else {
+        } else {
           setVideos([]);
         }
         setIsProcessing(false);
         console.log(result.data.length);
       } catch (error) {
-        setIsLoading(false);
-        setVideos(null);
-        setIsProcessing(false);
-        console.log(error);
-        setServerMsg("Error loading videos");
+        if (error instanceof AxiosError) {
+          setIsLoading(false);
+          setVideos(null);
+          setIsProcessing(false);
+          console.log(error);
+          setServerMsg("Error loading videos");
+       
+        } else {
+          console.log(error);
+        }
       }
     },
     [selectedSubject]
@@ -137,6 +141,19 @@ const Form4 = () => {
     }
   };
 
+  const handleVideoSelect = (video: VideoProps) => {
+    setSelectedVideo(video);
+    setShouldGoNext(true);
+  }
+
+  useEffect(()=>{
+    if(selectedVideo){
+      setShouldGoNext(true);
+    } else {
+      setShouldGoNext(false);
+    }
+  },[selectedVideo])
+
   console.log("selected Subject", selectedVideo);
   console.log("isProcessing", isProcessing);
   return (
@@ -148,7 +165,7 @@ const Form4 = () => {
           </CardTitle>
         </CardHeader>
         <section className="w-full px-2 flex justify-end">
-          <Select onValueChange={handleSubjectChange}>
+          <Select value={selectedSubjectId} onValueChange={handleSubjectChange}>
             <SelectTrigger className="w-[180px] outline-none  ">
               <SelectValue placeholder="Location" />
             </SelectTrigger>
@@ -177,7 +194,7 @@ const Form4 = () => {
                 className={`w-1/4 flex items-center justify-center h-44 mx-2 overflow-hidden `}
                 onMouseEnter={() => handleMouseEnter(video.video_id)}
                 onMouseLeave={() => handleMouseLeave()}
-                onClick={() => setSelectedVideo(video)}
+                onClick={() => handleVideoSelect(video) }
                 style={{
                   objectFit: "cover",
                   transition: "all",
@@ -214,7 +231,11 @@ const Form4 = () => {
               </CardContent>
             ))
           ) : (
-            <LoadingMessage isProcessing={isLoading} serverMsg={serverMsg} videos = {videos} />
+            <LoadingMessage
+              isProcessing={isLoading}
+              serverMsg={serverMsg}
+              videos={videos}
+            />
           )}
         </Card>
       </section>

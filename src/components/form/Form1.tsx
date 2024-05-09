@@ -15,10 +15,10 @@ import {
 import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { useState } from "react";
-import { Progress } from "../ui/progress";
 import useDataProvider from "@/hooks/useDataProvider";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { BASE_URL } from "@/context/DataContext";
+import Modal from "../common/Modal";
 
 const formSchema = z.object({
   username: z.string().min(2, {
@@ -39,6 +39,8 @@ const Form1 = () => {
     isFailed: false,
   });
   const [uploadMsg, setUploadMsg] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
@@ -50,7 +52,7 @@ const Form1 = () => {
 
   const handleFileUpload = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
-    
+
     const formData = new FormData();
     formData.append("file", file as File);
     // formData.append("name", file?.name as string);
@@ -63,16 +65,20 @@ const Form1 = () => {
 
         {
           onUploadProgress: (progressEvent) => {
-            if (progressEvent && progressEvent.progress) {
+            if (progressEvent) {
               setUploadMsg("Uploading...");
               console.log(
                 "Upload Progress: " +
-                  Math.round(progressEvent.progress * 100) +
+                  Math.round(
+                    progressEvent.progress === undefined
+                      ? 0
+                      : progressEvent.progress * 100
+                  ) +
                   "%"
               );
               setProgress((previousState) => ({
                 ...previousState,
-                isStarted: true,
+                // isStarted: true,
                 isFailed: false,
                 value: Math.round(
                   progressEvent.progress === undefined
@@ -89,6 +95,7 @@ const Form1 = () => {
       );
       console.log(result);
       setUploadMsg("File uploaded successfully");
+      setIsCompleted(true);
       setShouldGoNext(true);
     } catch (error) {
       console.log(error);
@@ -96,6 +103,16 @@ const Form1 = () => {
       setProgress((previousState) => ({
         ...previousState,
         isFailed: true,
+      }));
+    } finally {
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setUploadMsg("");
+        setIsCompleted(false);
+      }, 1000);
+      setProgress((previousState) => ({
+        ...previousState,
+        isStarted: false,
       }));
     }
   };
@@ -147,6 +164,11 @@ const Form1 = () => {
       });
       return;
     }
+    setProgress((previousState) => ({
+      ...previousState,
+      isStarted: true,
+    }));
+    setIsModalOpen(true);
     handleFileUpload(values);
     setTestUser(values.username);
     // Do something with the form values.
@@ -193,24 +215,24 @@ const Form1 = () => {
             />
             <section className="w-full flex items-center justify-between">
               <section className="flex items-center justify-center gap-x-10">
-                <Button disabled = {!file} type="submit">Upload the video</Button>
-                {progress.isStarted && (
-                  <section>
-                    <Progress
-                      value={progress.value}
-                      className="w-40 h-[3px] "
-                      classNameCustom={
-                        progress.isFailed ? "bg-red-500" : `bg-green-500`
-                      }
-                    />
-                    <p className="text-[10px]">{uploadMsg}</p>
-                  </section>
-                )}
+                <Button disabled={!file} type="submit">
+                  Upload the video
+                </Button>
               </section>
             </section>
           </form>
         </Form>
       </CardContent>
+      {isModalOpen && (
+        <Modal
+          uploadMsg={uploadMsg}
+          progress={progress}
+          progressValue={progress.value}
+          isCompleted={isCompleted}
+          formNumber={1}
+          isStarted={progress.isStarted}
+        />
+      )}
     </>
   );
 };

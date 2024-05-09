@@ -12,7 +12,9 @@ import { AuroraBackgroundDemo } from "./Background/AuroraBackgroundDemo";
 
 const App = () => {
   const [progress, setProgress] = useState(20);
-  const { updatePage, page, shouldGoNext } = useDataProvider();
+  const { updatePage, page,
+    //  shouldGoNext 
+    } = useDataProvider();
 
   const handleNextPage = () => {
     setProgress((oldProgress) => {
@@ -61,7 +63,9 @@ const App = () => {
                 </Button>
               )}
               {page <= 4 && (
-                <Button type="button" onClick={handleNextPage}>
+                <Button
+                // disabled= {!shouldGoNext}
+                type="button" onClick={handleNextPage}>
                   Next
                 </Button>
               )}

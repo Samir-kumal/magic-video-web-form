@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import ReactPlayer from "react-player";
-import {  useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { Button } from "../ui/button";
 import axios, { AxiosError } from "axios";
 import { BASE_URL } from "@/context/DataContext";
@@ -49,8 +49,8 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
     state: false,
     url: "",
   });
+  console.log(progress.isCompleted);
 
-  
   useEffect(() => {
     if (uploadedVideo) {
       const objectUrl = URL.createObjectURL(
@@ -99,11 +99,11 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
 
   // Extract hours, minutes, and seconds
   const hours = dateObject.getHours();
-  var minutes = dateObject.getMinutes();
+  let minutes = dateObject.getMinutes();
   const seconds = dateObject.getSeconds();
   // const givenTimeMilliseconds = markedTime * 100;
   // console.log("ml", givenTimeMilliseconds);
-  var newSeconds = seconds + markedTime;
+  let newSeconds = seconds + markedTime;
 
   // Check if adding 3 seconds causes the minutes to increment
   if (newSeconds >= 60) {
@@ -134,7 +134,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
     data.marked_time = formattedTime;
     const values = {
       ...data,
-      testuser: "bean",
+      testuser: testUser ?? "bean",
       subject_id: selectedSubjectId,
     };
     console.log("new data", values);
@@ -150,11 +150,15 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
 
         {
           onDownloadProgress: (progressEvent) => {
-            if (progressEvent && progressEvent.progress) {
+            if (progressEvent) {
               setUploadMsg("Creating Magic Video..");
               console.log(
                 "Upload Progress: " +
-                  Math.round(progressEvent.progress * 100) +
+                  Math.round(
+                    progressEvent.progress === undefined
+                      ? 0
+                      : progressEvent.progress * 100
+                  ) +
                   "%"
               );
             }
@@ -217,12 +221,9 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
   const onSubmit = async (data: any) => {
     CreateMagicVideo(data);
     setIsModalOpen(true);
-   
 
-  console.log("isModalOpen", isModalOpen);
-
-  }
-
+    console.log("isModalOpen", isModalOpen);
+  };
 
   return (
     <>
@@ -252,9 +253,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
               <ReactPlayer
                 ref={playerRef}
                 url={
-                  !uploadedVideo
-                    ? selectedVideo?.download_url
-                    :videoUrl ?? ""
+                  !uploadedVideo ? selectedVideo?.download_url : videoUrl ?? ""
                 }
                 width={"100%"}
                 height={"100%"}
@@ -372,4 +371,3 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
 };
 
 export default Form5;
-

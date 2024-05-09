@@ -1,254 +1,233 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import React, { useCallback, useEffect, useState } from "react";
+// import data from "@/data/data.json";
 import ReactPlayer from "react-player";
-import { Form, useForm } from "react-hook-form";
-import { Button } from "../ui/button";
-import axios from "axios";
-import { BASE_URL } from "@/context/DataContext";
-import { Progress } from "@radix-ui/react-progress";
+// import { Player, ControlBar } from "video-react";
 
-type FormInputs = {
-  duration: number;
-  marked_time: number;
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import useDataProvider from "@/hooks/useDataProvider";
+import axios from "axios";
+import { BASE_URL, VideoProps } from "@/context/DataContext";
+import io from "socket.io-client";
+import { LoadingSpinner } from "../ui/loadingSpinner";
+import LoadingMessage from "../common/LoadingMessage";
+// import { Button } from "../ui/button";
+// import { Input } from "../ui/input";
+// import { LoadingSpinner } from "../ui/loadingSpinner";
+// import { Progress } from "@radix-ui/react-progress";
+
+const socket = io(BASE_URL);
+type HoveredVideo = {
+  state: boolean;
+  id: string | null;
 };
 
 const Form4 = () => {
-  const playerRef = useRef(null);
-  const [markedTime, setMarkedTime] = useState<number>(0);
-  const [videoDuration, setVideoDuration] = useState<number>(0);
-  const [inputDuration, setInputDuration] = useState<number>(0);
-  const [validDuration, setValidDuration] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<FormInputs>();
-  const [progress, setProgress] = useState({
-    isStarted: false,
-    value: 0,
-    isFailed: false,
+  const { setSelectedSubjectId } = useDataProvider();
+  const [isLoading, setIsLoading] = useState(true);
+  const [videos, setVideos] = useState<VideoProps[] | null>([]);
+  const { videosSubjects } = useDataProvider();
+  const { selectedVideo, setSelectedVideo, testUser } = useDataProvider();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [serverMsg, setServerMsg] = useState("loading videos");
+  const [isHovered, setIsHovered] = useState<HoveredVideo>({
+    state: false,
+    id: null,
   });
-  const [uploadMsg, setUploadMsg] = useState("");
-  const [url, setUrl] = useState(false);
-  const onSubmit = async (data: any) => {
-    // console.log("Form data:", data);
-    // console.log("Marked Time:", data.marked_time);
-    // console.log("ft,", formattedTime);
-    data.marked_time = formattedTime;
-    console.log("new data", data);
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/api/get_magic_video`,
-        data,
+  const [selectedSubject, setSelectedSubject] = useState({
+    subject_id: "",
+    subject_name: "",
+  });
+  const [error, setError] = useState({
+    isError: false,
+    message: "",
+  });
 
-        {
-          onUploadProgress: (progressEvent) => {
-            if (progressEvent && progressEvent.progress) {
-              setUploadMsg("Creating Magic Video..");
-              console.log(
-                "Upload Progress: " +
-                  Math.round(progressEvent.progress * 100) +
-                  "%"
-              );
-              setProgress((previousState) => ({
-                ...previousState,
-                isStarted: true,
-                isFailed: false,
-                value: Math.round(progressEvent.progress * 100),
-              }));
-            }
-          },
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      // if (response.data) {
-      //   console.log(response.data.status);
-      //   // setUploadMsg("Magic Video Created Successfully");
-      // }
-      console.log(response.data.success);
-      // console.log(response.data.url);
-      setUrl(true);
-      setUploadMsg(response.data.success);
-    } catch (err: any) {
-      if (err.response && err.response.data && err.response.data.errors) {
-        console.log(err);
-        setUploadMsg("File upload failed");
-        setProgress((previousState) => ({
-          ...previousState,
-          isFailed: true,
-        }));
-      }
-    }
-  };
-
-  const handlePause = () => {
-    if (playerRef.current) {
-      const playerInstance = playerRef.current as ReactPlayer;
-      const currentTime = playerInstance.getCurrentTime();
-      console.log(`Video paused at ${currentTime} seconds`);
-      const roundedTime = parseFloat(currentTime.toFixed(0));
-      setMarkedTime(Number(roundedTime));
-      setValue("marked_time", Number(roundedTime));
-    }
-  };
-  const handleDuration = (duration: any) => {
-    console.log(`The video is ${duration} seconds long.`);
-    setVideoDuration(duration);
-  };
-  const handleInputChange = (e: any) => {
-    console.log("input");
-    setInputDuration(Number(e.target.value));
-    console.log("duration:", inputDuration);
-  };
   useEffect(() => {
-    console.log("marked time", markedTime);
-    console.log("duration:", inputDuration);
-    console.log("valid:", inputDuration + (markedTime ?? 0));
-    setValidDuration(inputDuration + (markedTime ?? 0) > videoDuration);
-    console.log(validDuration);
-  }, [inputDuration, markedTime, videoDuration]);
+    getVideoFiles();
+  }, []);
 
-  const dateString = "2024-04-17 10:00:00";
+  const getVideoFiles = useCallback(
+    async (value = "") => {
+      if (!isLoading) {
+        setIsLoading(true);
+      }
+      try {
+        const result = await axios.post(`${BASE_URL}/api/files`, {
+          subject_id: value,
+          testuser: "bean",
+        });
+        if (result.data) {
+          setIsLoading(false);
+        }
+        if (result.data.length > 0) {
+          setVideos(result.data);
+        } 
+        else {
+          setVideos([]);
+        }
+        setIsProcessing(false);
+        console.log(result.data.length);
+      } catch (error) {
+        setIsLoading(false);
+        setVideos(null);
+        setIsProcessing(false);
+        console.log(error);
+      }
+    },
+    [selectedSubject]
+  );
 
-  // Create a Date object from the string
-  const dateObject = new Date(dateString);
+  socket.on("files_task", (data) => {
+    console.log("Task event received", data.data);
+    if (data.data === "Detecting") {
+      setServerMsg("Detecting the videos");
+      setIsProcessing(true);
+    } else if (data.data === "Detected") {
+      setServerMsg("Detected the videos with similar content");
+      setIsProcessing(false);
+    } else if (data.data === "Not Detected") {
+      setServerMsg("No videos found");
+      setVideos(null);
+      setIsProcessing(false);
+    }
+  });
 
-  // Extract hours, minutes, and seconds
-  const hours = dateObject.getHours();
-  var minutes = dateObject.getMinutes();
-  const seconds = dateObject.getSeconds();
-  // const givenTimeMilliseconds = markedTime * 100;
-  // console.log("ml", givenTimeMilliseconds);
-  var newSeconds = seconds + markedTime;
+  const handleMouseEnter = (videId: string) => {
+    console.log(videId);
+    setIsHovered((prev) => {
+      return {
+        ...prev,
+        state: true,
+        id: videId,
+      };
+    });
+  };
+  const handleMouseLeave = () => {
+    setIsHovered((prev) => {
+      return {
+        ...prev,
+        state: true,
+        id: null,
+      };
+    });
+  };
+  const handleSubjectChange = (value: string) => {
+    console.log("The selected value is ", value);
+    setSelectedSubjectId(value);
+    const subject = videosSubjects?.find(
+      (item) => item.subject_id === value
+    )?.subject_name;
+    if (value) {
+      setSelectedSubject((previous) => ({
+        ...previous,
+        subject_id: value,
+        subject_name: subject as string,
+      }));
+      getVideoFiles(value);
+    }
+  };
 
-  // Check if adding 3 seconds causes the minutes to increment
-  if (newSeconds >= 60) {
-    // Increment minutes and reset seconds
-    minutes++;
-    newSeconds -= 60; // Subtract 60 to get the remaining seconds after incrementing minutes
-  }
-
-  // Update the seconds in the Date object
-  // baseTime.setSeconds(newSeconds);
-
-  // Format the updated time
-  const formattedTime = `2024-04-17 ${hours
-    .toString()
-    .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${newSeconds
-    .toString()
-    .padStart(2, "0")}`;
-
-  console.log("ft", formattedTime);
+  console.log("selected Subject", selectedVideo);
+  console.log("isProcessing", isProcessing);
   return (
-    <>
-      <CardHeader>
-        <CardTitle>Step 4 - Create magic video</CardTitle>
-      </CardHeader>
-      <Card className="flex items-center justify-center border-0 shadow-none">
-        <CardContent className="gap-2">
-          <ReactPlayer
-            ref={playerRef}
-            url={"src/assets/bean2.mp4"}
-            width={"100%"}
-            height={"100%"}
-            onPause={handlePause}
-            onDuration={handleDuration}
-            controls
-          />
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-5">
-            <div className="flex flex-col mb-2">
-              <label htmlFor="marked_time">Marked Time</label>
-              <input
-                className="p-2 border rounded-md mt-1 appearance-none"
-                id="marked_time"
-                type="number"
-                {...register("marked_time", {
-                  required: {
-                    value: true,
-                    message: "This field is required",
-                  },
-                  validate: {
-                    required: (value) => {
-                      if (value > videoDuration)
-                        return "The marked time shouldn't exceed the video duration";
-                      if (value < 0) return "Please enter a positive number";
-                      return true;
-                    },
-                  },
-                })}
-              />
-              {errors.marked_time && (
-                <span className="text-red-500">
-                  {errors.marked_time.message}
-                </span>
-              )}
-              <div className="text-sm text-gray-500">
-                Pause the video on the time you want to capture the magic moment
-              </div>
-            </div>
-            <div className="flex flex-col mb-2">
-              <label htmlFor="duration">Duration</label>
-              <input
-                className="p-2 border rounded-md mt-1 appearance-none"
-                id="duration"
-                type="number"
-                onInput={handleInputChange}
-                {...register("duration", {
-                  required: {
-                    value: true,
-                    message: "This field is required",
-                  },
-                  validate: {
-                    required: (value) => {
-                      if (validDuration)
-                        return "The duration should not exceed the video size";
-                      if (value < 0) return "Please enter a positive number";
-                      return true;
-                    },
-                  },
-                })}
-              />
-              {errors.duration && (
-                <span className="text-red-500">{errors.duration.message}</span>
-              )}
-              <div className="text-sm text-gray-500">
-                Insert the duration of the magic moment you want to capture
-              </div>
-            </div>
-            <Button type="submit" className="mt-5 float-end">
-              Create Magic Video
-            </Button>
-            {/* <p className="text-[10px]">{uploadMsg}</p> */}
-            {progress.isStarted && (
-              <section>
-                <Progress
-                  value={progress.value}
-                  className="w-40 h-[3px] "
-                  classNameCustom={
-                    progress.isFailed ? "bg-red-500" : `bg-green-500`
-                  }
-                />
-                <p className="text-[12px]">{uploadMsg}</p>
-              </section>
-            )}
-            {url && (
-              <>
-                <Button className="mt-1">
-                  <a href="http://192.168.1.151:5001/api/magic_video_download">
-                    Download Video
-                  </a>
-                </Button>
-              </>
-            )}
-          </form>
+    <Card className="border-none shadow-none">
+      <section>
+        <CardHeader>
+          <CardTitle>
+            Some of the Similar Videos Based on Your Location
+          </CardTitle>
+        </CardHeader>
+        <section className="w-full px-2 flex justify-end">
+          <Select onValueChange={handleSubjectChange}>
+            <SelectTrigger className="w-[180px] outline-none  ">
+              <SelectValue placeholder="Location" />
+            </SelectTrigger>
+            <SelectContent className=" outline-none">
+              {videosSubjects
+                ? videosSubjects.map((item) => (
+                    <SelectItem key={item.subject_id} value={item.subject_id}>
+                      {item.subject_name}
+                    </SelectItem>
+                  ))
+                : null}
+            </SelectContent>
+          </Select>
+        </section>
+        <CardContent className="w-1/2">
+          <CardDescription>Selected Location</CardDescription>{" "}
+          <CardDescription className="text-black text-bold">
+            {selectedSubject?.subject_name}
+          </CardDescription>
         </CardContent>
-      </Card>
-    </>
+        <Card className="flex flex-row flex-wrap items-center justify-center shadow-none border-0">
+          {!isLoading && videos && videos.length > 0 ? (
+            videos.slice(0, 12).map((video) => (
+              <CardContent
+                key={video.video_id}
+                className={`w-1/4 flex items-center justify-center h-44 mx-2 overflow-hidden `}
+                onMouseEnter={() => handleMouseEnter(video.video_id)}
+                onMouseLeave={() => handleMouseLeave()}
+                onClick={() => setSelectedVideo(video)}
+                style={{
+                  objectFit: "cover",
+                  transition: "all",
+                  borderRadius: "0px",
+                }}
+              >
+                <ReactPlayer
+                  url={video?.download_url}
+                  width={"100%"}
+                  // light={video?.download_url}
+                  stopOnUnmount={true}
+                  height={"100%"}
+                  style={{
+                    objectFit: "cover",
+                    transition: "all",
+                    borderRadius: "0px",
+                    border:
+                      (isHovered.id === video.video_id && isHovered.state) ||
+                      selectedVideo?.video_id === video.video_id
+                        ? "3px solid black"
+                        : "none",
+                    padding:
+                      (isHovered.id === video.video_id && isHovered.state) ||
+                      selectedVideo?.video_id === video.video_id
+                        ? "3px"
+                        : "0",
+                  }}
+                  playing={isHovered.id === video.video_id && isHovered.state}
+                />
+                {/* 
+                <Player autoPlay={false} src={video?.download_url}>
+                  <ControlBar autoHide={true} className="my-class" />
+                </Player> */}
+              </CardContent>
+            ))
+          ) : (
+            <LoadingMessage isProcessing={isLoading} serverMsg={serverMsg} videos = {videos} />
+          )}
+        </Card>
+      </section>
+    </Card>
   );
 };
 
 export default Form4;
+// {videos === null && !isLoading && (
+//   <CardContent className="w-full flex items-center gap-x-2 justify-center">
+//     <p className="text-sm">No videos found</p>
+//   </CardContent>
+// )}

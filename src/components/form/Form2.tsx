@@ -248,7 +248,7 @@ const Form2 = () => {
               <section className="w-full flex items-center justify-between">
                 <section className="flex items-center justify-center gap-x-10">
                   {/* <LoadingSpinner className="" size="14" /> */}
-                  <Button disabled= {isProcessing || progress.isStarted} type="submit">Upload</Button>
+                  <Button disabled= {isProcessing || progress.isStarted || !file} type="submit">Upload</Button>
                   {progress.isStarted && (
                     <section className={`${isProcessing ? "flex" : ""}`}>
                       {isProcessing ? (

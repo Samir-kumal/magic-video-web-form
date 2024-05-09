@@ -27,7 +27,7 @@ const formSchema = z.object({
 });
 
 const Form1 = () => {
-  const { setPage } = useDataProvider();
+  const { setShouldGoNext, setTestUser } = useDataProvider();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState({
     isError: false,
@@ -50,6 +50,7 @@ const Form1 = () => {
 
   const handleFileUpload = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
+    
     const formData = new FormData();
     formData.append("file", file as File);
     // formData.append("name", file?.name as string);
@@ -73,7 +74,11 @@ const Form1 = () => {
                 ...previousState,
                 isStarted: true,
                 isFailed: false,
-                value: Math.round(progressEvent.progress * 100),
+                value: Math.round(
+                  progressEvent.progress === undefined
+                    ? 0
+                    : progressEvent.progress * 100
+                ),
               }));
             }
           },
@@ -84,6 +89,7 @@ const Form1 = () => {
       );
       console.log(result);
       setUploadMsg("File uploaded successfully");
+      setShouldGoNext(true);
     } catch (error) {
       console.log(error);
       setUploadMsg("File upload failed");
@@ -95,7 +101,7 @@ const Form1 = () => {
   };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files ? e.target.files[0] : null;
-
+    console.log(selectedFile);
     if (!selectedFile) {
       setError((previous) => {
         return {
@@ -132,11 +138,6 @@ const Form1 = () => {
     }
   };
 
-  const handleNextPage = () => {
-    console.log("Next Page");
-
-    setPage(2);
-  };
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (!file) {
@@ -147,6 +148,7 @@ const Form1 = () => {
       return;
     }
     handleFileUpload(values);
+    setTestUser(values.username);
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values);
@@ -185,15 +187,13 @@ const Form1 = () => {
                     />
                   </FormControl>
                   {/* <FormMessage /> */}
-                  {error.isError && (
-                    <FormMessage>{error.message}</FormMessage>
-                  )}
+                  {error.isError && <FormMessage>{error.message}</FormMessage>}
                 </FormItem>
               )}
             />
             <section className="w-full flex items-center justify-between">
               <section className="flex items-center justify-center gap-x-10">
-                <Button type="submit">Submit</Button>
+                <Button disabled = {!file} type="submit">Upload the video</Button>
                 {progress.isStarted && (
                   <section>
                     <Progress

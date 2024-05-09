@@ -73,7 +73,9 @@ const DataProvider = ({ children }: DataProviderProps) => {
   };
 
   useEffect(() => {
-    getSubjectList();  
+    if (videosSubjects === null) {
+      getSubjectList();
+    }
   }, []);
   const getSubjectList = useCallback(async () => {
     try {

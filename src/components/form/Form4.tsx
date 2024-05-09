@@ -21,12 +21,8 @@ import useDataProvider from "@/hooks/useDataProvider";
 import axios from "axios";
 import { BASE_URL, VideoProps } from "@/context/DataContext";
 import io from "socket.io-client";
-import { LoadingSpinner } from "../ui/loadingSpinner";
 import LoadingMessage from "../common/LoadingMessage";
-// import { Button } from "../ui/button";
-// import { Input } from "../ui/input";
-// import { LoadingSpinner } from "../ui/loadingSpinner";
-// import { Progress } from "@radix-ui/react-progress";
+
 
 const socket = io(BASE_URL);
 type HoveredVideo = {
@@ -85,6 +81,7 @@ const Form4 = () => {
         setVideos(null);
         setIsProcessing(false);
         console.log(error);
+        setServerMsg("Error loading videos");
       }
     },
     [selectedSubject]
@@ -226,8 +223,3 @@ const Form4 = () => {
 };
 
 export default Form4;
-// {videos === null && !isLoading && (
-//   <CardContent className="w-full flex items-center gap-x-2 justify-center">
-//     <p className="text-sm">No videos found</p>
-//   </CardContent>
-// )}

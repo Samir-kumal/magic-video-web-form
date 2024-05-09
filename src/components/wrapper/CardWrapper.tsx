@@ -5,7 +5,7 @@ interface CardWrapperProps {
 }
 
 const CardWrapper = ({ children }: CardWrapperProps) => {
-  return <Card className="w-1/2">{children}</Card>;
+  return <Card className="w-1/2 mb-20">{children}</Card>;
 };
 
 export default CardWrapper;

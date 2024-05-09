@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import {useState } from "react";
 import CardWrapper from "./components/wrapper/CardWrapper";
 import {
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "./components/ui/card";
 import ProgressComponent from "./components/form/Progress";
 import Form from "./components/controller/FormComponent";
@@ -15,28 +13,31 @@ import ProgressNumHeader from "./components/common/ProgressNumHeader";
 import "./App.css";
 
 const App = () => {
-  const [progress, setProgress] = useState(25);
-  const { updatePage, page } = useDataProvider();
+  const [progress, setProgress] = useState(20);
+  const { updatePage, page, shouldGoNext } = useDataProvider();
+
+
 
   const handleNextPage = () => {
     setProgress((oldProgress) => {
       if (oldProgress === 100) {
-        return 25;
+        return 20;
       }
-      return oldProgress + 25;
+      return oldProgress + 20;
     });
     updatePage(PageAction.NEXT);
   };
 
   const handlePreviousPage = () => {
     setProgress((oldProgress) => {
-      if (oldProgress === 25) {
-        return 100;
+      if (oldProgress === 20) {
+        return 20;
       }
-      return oldProgress - 25;
+      return oldProgress - 20;
     });
     updatePage(PageAction.PREVIOUS);
   };
+
 
   console.log("page no is ", page);
   return (
@@ -46,30 +47,22 @@ const App = () => {
           <h1 className="text-2xl font-bold">Magic Video Web App</h1>
         </div>
         <ProgressNumHeader progress={progress} />
-        <CardWrapper>
-          {/* <CardHeader>
-          
-          </CardHeader> */}
+        <CardWrapper >
+         
           <CardHeader>
             <ProgressComponent progress={progress} />
           </CardHeader>
-          {/* <CardHeader>
-            <CardTitle>Step 1 - Insert the name and a video of the subject you want to train</CardTitle>
-          </CardHeader> */}
-          {/* <CardContent> */}
-          <Form />
+       
+          <Form  handlePreviousPage = {handlePreviousPage} />
           {/* </CardContent> */}
-          <CardContent className="flex justify-end gap-x-3">
-            {page !== 1 && (
-              <Button type="button" onClick={handlePreviousPage}>
-                Previous
-              </Button>
-            )}
-            {page !== 4 && (
-              <Button type="button" onClick={handleNextPage}>
-                Next
-              </Button>
-            )}
+          <CardContent  className="flex justify-end gap-x-3">
+           {page !==1  && <Button className={`${progress === 100 ? "hidden" : ""}`} type="button" onClick={handlePreviousPage}>
+              Previous
+            </Button>}
+           {page  <=4 && <Button  type="button" onClick={handleNextPage}>
+              Next
+            </Button>}
+         
           </CardContent>
         </CardWrapper>
       </section>

@@ -3,13 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { useState } from "react";
-import { Progress } from "../ui/progress";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { BASE_URL } from "@/context/DataContext";
-import ReactPlayer from "react-player";
 import useDataProvider from "@/hooks/useDataProvider";
-import { Loader } from "lucide-react";
-import { LoadingSpinner } from "../ui/loadingSpinner";
 import "video-react/dist/video-react.css"; // import css
 import { Player, ControlBar } from "video-react";
 import io from "socket.io-client";
@@ -20,8 +16,7 @@ const socket = io(BASE_URL);
 const Form2 = () => {
   const [file, setFile] = useState<File | null>(null);
   const { setShouldGoNext } = useDataProvider();
-  // const url = `http://192.168.1.151:5000/api/files/download/Dhani_Bau_Ko_Chhori.mp4`;
-  // const url = `http://192.168.1.151:5000/api/files/download/output.mp4`;
+
   const url = `http://192.168.1.151:5001/api/testupload_download`;
   console.log("The url for the download link is ", url);
   const [videoUrl, setVideoUrl] = useState("");
@@ -53,7 +48,6 @@ const Form2 = () => {
       setIsProcessing(false);
       setIsCompleted(true);
     }
-    // setUploadMsg("Video processing started...");
   });
 
   // Listen for socket event indicating video processing completed
@@ -70,11 +64,15 @@ const Form2 = () => {
 
         {
           onUploadProgress: (progressEvent) => {
-            if (progressEvent && progressEvent.progress) {
+            if (progressEvent) {
               setUploadMsg("Uploading...");
               console.log(
                 "Upload Progress: " +
-                  Math.round(progressEvent.progress * 100) +
+                  Math.round(
+                    progressEvent.progress === undefined
+                      ? 0
+                      : progressEvent.progress * 100
+                  ) +
                   "%"
               );
               setProgress((previousState) => ({
@@ -97,7 +95,6 @@ const Form2 = () => {
       console.log(result);
 
       setVideoUrl(url);
-      // handleTestVideoDownload();
       setShouldGoNext(true);
     } catch (error) {
       console.log(error);
@@ -107,11 +104,10 @@ const Form2 = () => {
         isFailed: true,
       }));
     } finally {
-      setTimeout(()=>{
+      setTimeout(() => {
         setIsModalOpen(false);
         setUploadMsg("");
-      },1000)
-      // setIsModalOpen(false);
+      }, 1000);
     }
   };
 
@@ -199,7 +195,7 @@ const Form2 = () => {
     // setTimeout(() => {
     //   setIsModalOpen(false);
     //   setIsCompleted(false);
-     
+
     //   setUploadMsg("");
     // }, 10000);
   }
@@ -219,8 +215,7 @@ const Form2 = () => {
             <form onSubmit={onSubmit} className="space-y-8">
               <section>
                 <Input type="file" accept="video/*" onChange={handleChange} />
-                {/* <FormMessage /> */}
-                {/* {error.isError && <FormMessage>{error.message}</FormMessage>} */}
+
                 {error.isError && (
                   <p className="text-red-500 text-[12px]">{error.message}</p>
                 )}
@@ -234,24 +229,6 @@ const Form2 = () => {
                   >
                     Upload
                   </Button>
-                  {/* {progress.isStarted && (
-                    <section className={`${isProcessing ? "flex" : ""}`}>
-                      {isProcessing ? (
-                        <div className=" w-fit px-1">
-                          <LoadingSpinner className="" size="14" />
-                        </div>
-                      ) : (
-                        <Progress
-                          value={progress.value}
-                          className="w-40 h-[3px] "
-                          classNameCustom={
-                            progress.isFailed ? "bg-red-500" : `bg-green-500`
-                          }
-                        />
-                      )}
-                      <p className="text-[10px]">{uploadMsg}</p>
-                    </section>
-                  )} */}
                 </section>
               </section>
             </form>

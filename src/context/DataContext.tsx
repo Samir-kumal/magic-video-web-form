@@ -48,13 +48,13 @@ export interface VideoSubjectsProps {
   subject_id: string;
   subject_name: string;
 }
-export const BASE_URL = "http://192.168.1.151:5001";
+// export const BASE_URL = "http://192.168.1.151:5001";
+export const BASE_URL = "http://192.168.1.143:5001";
 
-// type SelectedVideo = (typeof VideoProps);
 
 const DataProvider = ({ children }: DataProviderProps) => {
   const [page, setPage] = useState(1);
-  const [shouldGoNext, setShouldGoNext] = useState(true);
+  const [shouldGoNext, setShouldGoNext] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoProps | null>(null);
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const [testUser, setTestUser] = useState("");

@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "../ui/card";
@@ -13,7 +12,6 @@ import axios from "axios";
 import { BASE_URL } from "@/context/DataContext";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Label } from "../ui/label";
 import {
   Select,
@@ -22,19 +20,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-
-type HoveredVideo = {
-  state: boolean;
-  id: string | null;
-};
+import Modal from "../common/Modal";
 
 const Form3 = () => {
   const [file, setFile] = useState<File | null>(null);
   const [location, setLocation] = useState("");
-  const { setUploadedVideo, videosSubjects } = useDataProvider();
+  const {
+    setUploadedVideo,
+    videosSubjects,
+    setShouldGoNext,
+    setSelectedSubjectId,
+    selectedSubjectId,
+  } = useDataProvider();
 
-  const [selectedSubject, setSelectedSubject] = React.useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState({
     isError: false,
     message: "",
@@ -46,6 +44,8 @@ const Form3 = () => {
     isCompleted: false,
   });
   const [uploadMsg, setUploadMsg] = useState("");
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files ? e.target.files[0] : null;
@@ -83,7 +83,6 @@ const Form3 = () => {
         };
       });
       setFile(selectedFile);
-      // handleFileUpload();
     }
   };
 
@@ -107,6 +106,7 @@ const Form3 = () => {
       ...previousState,
       isStarted: true,
     }));
+    setIsModalOpen(true);
     handleFileUpload();
   };
   const handleFileUpload = async () => {
@@ -122,11 +122,15 @@ const Form3 = () => {
 
         {
           onUploadProgress: (progressEvent) => {
-            if (progressEvent && progressEvent.progress) {
+            if (progressEvent) {
               setUploadMsg("Uploading...");
               console.log(
                 "Upload Progress: " +
-                  Math.round(progressEvent.progress * 100) +
+                  Math.round(
+                    progressEvent.progress === undefined
+                      ? 0
+                      : progressEvent.progress * 100
+                  ) +
                   "%"
               );
               setProgress((previousState) => ({
@@ -148,9 +152,6 @@ const Form3 = () => {
         }
       );
       console.log(result);
-      // setVideoUrl(url);
-      // handleTestVideoDownload();
-      // setShouldGoNext(true);
       if (result.data) {
         setUploadedVideo(file);
         setUploadMsg("File uploaded successfully");
@@ -158,6 +159,8 @@ const Form3 = () => {
           ...previousState,
           isCompleted: true,
         }));
+        setShouldGoNext(true);
+        setIsCompleted(true);
       }
     } catch (error) {
       console.log(error);
@@ -167,6 +170,11 @@ const Form3 = () => {
         isFailed: true,
       }));
     } finally {
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setUploadMsg("");
+        setIsCompleted(false);
+      }, 1000);
       setProgress((previousState) => ({
         ...previousState,
         isStarted: false,
@@ -176,7 +184,7 @@ const Form3 = () => {
 
   const buttonDisabled = () => {
     let isDisabled = true;
-    if (isProcessing || progress.isStarted) {
+    if (progress.isStarted) {
       return isDisabled;
     } else if (file === null && location.length === 0) {
       return isDisabled;
@@ -194,6 +202,7 @@ const Form3 = () => {
 
   const handleSubjectChange = (value: string) => {
     setUploadMsg("");
+    setSelectedSubjectId(value);
     console.log("The selected value is ", value);
     const location = videosSubjects?.find((item) => item.subject_id === value);
     console.log("The Location of the video is ", location?.subject_name);
@@ -201,56 +210,60 @@ const Form3 = () => {
   };
 
   return (
-    <Card className="border-none shadow-none">
-      <section>
-        <CardHeader>
-          <CardTitle>
-            Step 3 - Select the video you want to Create Magic Video of
-          </CardTitle>
-        </CardHeader>
+    <>
+      <Card className="border-none shadow-none">
+        <section>
+          <CardHeader>
+            <CardTitle>
+              Step 3 - Select the video you want to Create Magic Video of
+            </CardTitle>
+          </CardHeader>
 
-        <Card className="border-0 shadow-none ">
-          <CardHeader>Upload a video</CardHeader>
+          <Card className="border-0 shadow-none ">
+            <CardHeader>Upload a video</CardHeader>
 
-          <CardContent>
-            <form onSubmit={handleSubmit}>
-              <Input
-                className="my-2"
-                type="file"
-                accept="video/*"
-                onChange={handleChange}
-              />
-              <Label className="my-2">Location</Label>
+            <CardContent>
+              <form onSubmit={handleSubmit}>
+                <Input
+                  className="my-2"
+                  type="file"
+                  accept="video/*"
+                  onChange={handleChange}
+                />
+                <Label className="my-2">Location</Label>
 
-              <section className="my-2">
-                <Select onValueChange={handleSubjectChange}>
-                  <SelectTrigger className="w-[180px] outline-none  ">
-                    <SelectValue placeholder="Location" />
-                  </SelectTrigger>
-                  <SelectContent className=" outline-none">
-                    {videosSubjects
-                      ? videosSubjects.map((item) => (
-                          <SelectItem
-                            key={item.subject_id}
-                            value={item.subject_id}
-                          >
-                            {item.subject_name}
-                          </SelectItem>
-                        ))
-                      : null}
-                  </SelectContent>
-                </Select>
-              </section>
+                <section className="my-2">
+                  <Select
+                    value={selectedSubjectId}
+                    onValueChange={handleSubjectChange}
+                  >
+                    <SelectTrigger className="w-[180px] outline-none  ">
+                      <SelectValue placeholder="Location" />
+                    </SelectTrigger>
+                    <SelectContent className=" outline-none">
+                      {videosSubjects
+                        ? videosSubjects.map((item) => (
+                            <SelectItem
+                              key={item.subject_id}
+                              value={item.subject_id}
+                            >
+                              {item.subject_name}
+                            </SelectItem>
+                          ))
+                        : null}
+                    </SelectContent>
+                  </Select>
+                </section>
 
-              {error.isError && (
-                <p className="text-red-500 text-[12px]">{error.message}</p>
-              )}
-              <section className=" flex items-center gap-x-10">
-                <Button disabled={buttonDisabled()} type="submit">
-                  Upload
-                </Button>
+                {error.isError && (
+                  <p className="text-red-500 text-[12px]">{error.message}</p>
+                )}
+                <section className=" flex items-center gap-x-10">
+                  <Button disabled={buttonDisabled()} type="submit">
+                    Upload
+                  </Button>
 
-                <section className={`${isProcessing ? "flex" : ""}`}>
+                  {/* <section className={`${isProcessing ? "flex" : ""}`}>
                   {progress.isStarted && (
                     <Progress
                       value={progress.value}
@@ -262,13 +275,24 @@ const Form3 = () => {
                   )}
 
                   <p className="text-[10px]">{uploadMsg}</p>
+                </section> */}
                 </section>
-              </section>
-            </form>
-          </CardContent>
-        </Card>
-      </section>
-    </Card>
+              </form>
+            </CardContent>
+          </Card>
+        </section>
+      </Card>
+      {isModalOpen && (
+        <Modal
+          formNumber={3}
+          uploadMsg={uploadMsg}
+          progress={progress}
+          isCompleted={isCompleted}
+          progressValue={progress.value}
+          isStarted={progress.isStarted}
+        />
+      )}
+    </>
   );
 };
 

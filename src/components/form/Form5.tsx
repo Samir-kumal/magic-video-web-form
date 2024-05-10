@@ -92,7 +92,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
     console.log(validDuration);
   }, [inputDuration, markedTime, videoDuration]);
 
-  const dateString = "2024-04-17 10:00:00";
+  const dateString = "2024-04-17 10:00:00.00";
 
   // Create a Date object from the string
   const dateObject = new Date(dateString);
@@ -120,7 +120,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
     .toString()
     .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${newSeconds
     .toString()
-    .padStart(2, "0")}`;
+    .padStart(2, "0")}.00`;
 
   console.log("ft", formattedTime);
 

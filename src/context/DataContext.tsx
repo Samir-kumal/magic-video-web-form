@@ -49,7 +49,8 @@ export interface VideoSubjectsProps {
   subject_name: string;
 }
 // export const BASE_URL = "http://192.168.1.151:5001";
-export const BASE_URL = "https://rendered-faster-bachelor-premier.trycloudflare.com";
+export const BASE_URL = "https://institution-parade-ll-li.trycloudflare.com";
+// export const BASE_URL = "https://rendered-faster-bachelor-premier.trycloudflare.com";
 // export const BASE_URL = "http://192.168.1.143:5001";
 
 

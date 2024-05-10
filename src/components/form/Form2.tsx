@@ -36,27 +36,23 @@ const Form2 = () => {
 
   // 1. Define your form.
 
-  useEffect(() => {
-    socket.on("task", (data) => {
-      console.log("Task event received", data.data);
-      if (data.data === "Upload successful") {
-        setUploadMsg("File uploaded successfully");
-      } else if (data.data === "Processing start") {
-        setUploadMsg("Processing the video");
-        setIsProcessing(true);
-      } else if (data.data === "Processing complete") {
-        setUploadMsg("File processed Successfully");
-        setIsProcessing(false);
-        setIsCompleted(true);
-      }
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+ 
 
   // Listen for socket event indicating video processing completed
+
+  socket.on("task", (data) => {
+    console.log("Task event received", data.data);
+    if (data.data === "Upload successful") {
+      setUploadMsg("File uploaded successfully");
+    } else if (data.data === "Processing start") {
+      setUploadMsg("Processing the video");
+      setIsProcessing(true);
+    } else if (data.data === "Processing complete") {
+      setUploadMsg("File processed Successfully");
+      setIsProcessing(false);
+      setIsCompleted(true);
+    }
+  });
 
   const handleFileUpload = async () => {
     const formData = new FormData();

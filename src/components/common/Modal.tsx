@@ -42,7 +42,7 @@ const Modal = ({
         >
           {uploadMsg}
         </motion.h1>
-        {formNumber && progressValue !== 100 && !isProcessing && isStarted && (
+        {formNumber && progressValue !== 100  && !isProcessing && isStarted && (
           <Progress
             value={progressValue}
             className="h-6"

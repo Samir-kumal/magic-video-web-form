@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { BASE_URL } from "@/context/DataContext";
 import useDataProvider from "@/hooks/useDataProvider";
@@ -17,7 +17,7 @@ const Form2 = () => {
   const [file, setFile] = useState<File | null>(null);
   const { setShouldGoNext } = useDataProvider();
 
-  const url = `http://192.168.1.151:5001/api/testupload_download`;
+  const url = `${BASE_URL}/api/testupload_download`;
   console.log("The url for the download link is ", url);
   const [videoUrl, setVideoUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -36,6 +36,10 @@ const Form2 = () => {
 
   // 1. Define your form.
 
+ 
+
+  // Listen for socket event indicating video processing completed
+
   socket.on("task", (data) => {
     console.log("Task event received", data.data);
     if (data.data === "Upload successful") {
@@ -49,8 +53,6 @@ const Form2 = () => {
       setIsCompleted(true);
     }
   });
-
-  // Listen for socket event indicating video processing completed
 
   const handleFileUpload = async () => {
     const formData = new FormData();
@@ -75,6 +77,8 @@ const Form2 = () => {
                   ) +
                   "%"
               );
+              setIsModalOpen(true);
+
               setProgress((previousState) => ({
                 ...previousState,
                 isStarted: true,
@@ -106,6 +110,11 @@ const Form2 = () => {
     } finally {
       setTimeout(() => {
         setIsModalOpen(false);
+        setProgress((previousState) => ({
+          ...previousState,
+          isStarted: false,
+          value: 0,
+        }));
         setUploadMsg("");
       }, 1000);
     }
@@ -160,7 +169,6 @@ const Form2 = () => {
       });
       return;
     }
-    setIsModalOpen(true);
     handleFileUpload();
     // Do something with the form values.
     // ✅ This will be type-safe and validated.

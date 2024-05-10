@@ -41,6 +41,7 @@ const Form1 = () => {
   const [uploadMsg, setUploadMsg] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); 
 
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
@@ -76,9 +77,11 @@ const Form1 = () => {
                   ) +
                   "%"
               );
+              setIsModalOpen(true);
+
               setProgress((previousState) => ({
                 ...previousState,
-                // isStarted: true,
+                isStarted: true,
                 isFailed: false,
                 value: Math.round(
                   progressEvent.progress === undefined
@@ -86,6 +89,14 @@ const Form1 = () => {
                     : progressEvent.progress * 100
                 ),
               }));
+
+              if (progressEvent.progress === 1) {
+                setUploadMsg("Training the model");
+                setIsProcessing(true);
+                setTimeout(()=>{
+                  setUploadMsg("Please wait ....")
+                }, 1000)
+              }
             }
           },
           headers: {
@@ -94,7 +105,7 @@ const Form1 = () => {
         }
       );
       console.log(result);
-      setUploadMsg("File uploaded successfully");
+      setUploadMsg(" Model Trained successfully");
       setIsCompleted(true);
       setShouldGoNext(true);
     } catch (error) {
@@ -113,6 +124,7 @@ const Form1 = () => {
       setProgress((previousState) => ({
         ...previousState,
         isStarted: false,
+        value: 0,
       }));
     }
   };
@@ -164,11 +176,7 @@ const Form1 = () => {
       });
       return;
     }
-    setProgress((previousState) => ({
-      ...previousState,
-      isStarted: true,
-    }));
-    setIsModalOpen(true);
+  
     handleFileUpload(values);
     setTestUser(values.username);
     // Do something with the form values.
@@ -231,6 +239,7 @@ const Form1 = () => {
           isCompleted={isCompleted}
           formNumber={1}
           isStarted={progress.isStarted}
+          isProcessing={isProcessing}
         />
       )}
     </>

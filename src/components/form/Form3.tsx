@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 import useDataProvider from "@/hooks/useDataProvider";
 import axios from "axios";
@@ -102,11 +97,10 @@ const Form3 = () => {
       });
       return;
     }
-    setProgress((previousState) => ({
-      ...previousState,
-      isStarted: true,
-    }));
-    setIsModalOpen(true);
+    // setProgress((previousState) => ({
+    //   ...previousState,
+    //   isStarted: true,
+    // }));
     handleFileUpload();
   };
   const handleFileUpload = async () => {
@@ -133,9 +127,11 @@ const Form3 = () => {
                   ) +
                   "%"
               );
+              setIsModalOpen(true);
+
               setProgress((previousState) => ({
                 ...previousState,
-                // isStarted: true,
+                isStarted: true,
                 isFailed: false,
                 isCompleted: false,
                 value: Math.round(
@@ -178,6 +174,7 @@ const Form3 = () => {
       setProgress((previousState) => ({
         ...previousState,
         isStarted: false,
+        value: 0,
       }));
     }
   };

@@ -134,7 +134,7 @@ const Form5 = ({ handlePreviousPage }: Form5Props) => {
     data.marked_time = formattedTime;
     const values = {
       ...data,
-      testuser: testUser ?? "bean",
+      testuser: testUser ? testUser : "bean",
       subject_id: selectedSubjectId,
     };
     console.log("new data", values);

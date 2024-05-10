@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { CardContent, CardHeader, CardTitle } from "../ui/card";
 import { BASE_URL } from "@/context/DataContext";
 import useDataProvider from "@/hooks/useDataProvider";
